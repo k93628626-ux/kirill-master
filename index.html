@@ -697,7 +697,7 @@ footer{border-top:1px solid var(--line);padding:36px 0;color:var(--muted);font-s
 
 
 
-<!-- === КИРИЛЛ ADMIN RENDER (read-only) === -->
+<!-- === КИРИЛЛ ADMIN RENDER v2 === -->
 <style>
 .kmodal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
 .kmodal.on{display:flex}
@@ -716,50 +716,47 @@ footer{border-top:1px solid var(--line);padding:36px 0;color:var(--muted);font-s
 <script>
 (function(){
 const API='https://admin.agent24ai.ru';
+function photoURL(f){return /^https?:/i.test(f)?f:(API+'/uploads/'+f);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function vidEmbed(u){if(!u)return '';let m;
+function vidEmbed(u){if(!u)return '';var m;
  if(m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/))return '<div class="kvid"><iframe src="https://www.youtube.com/embed/'+m[1]+'" allowfullscreen></iframe></div>';
  if(m=u.match(/rutube\.ru\/(?:video\/)?([\w]+)/))return '<div class="kvid"><iframe src="https://rutube.ru/play/embed/'+m[1]+'" allowfullscreen></iframe></div>';
  if(m=u.match(/vk\.com\/video(-?\d+)_(\d+)/))return '<div class="kvid"><iframe src="https://vk.com/video_ext.php?oid='+m[1]+'&id='+m[2]+'" allowfullscreen></iframe></div>';
  return '';}
 window.kclose=function(){document.getElementById('kmodal').classList.remove('on')};
-document.addEventListener('keydown',e=>{if(e.key==='Escape')kclose()});
-document.getElementById('kmodal').addEventListener('click',e=>{if(e.target.id==='kmodal')kclose()});
-window.showProject=function(i){const p=DB.projects[i];if(!p)return;
- let h='<h3>'+esc(p.title)+'</h3>'+(p.category?'<span class="kcat">'+esc(p.category)+'</span>':'');
+document.addEventListener('keydown',function(e){if(e.key==='Escape')kclose()});
+document.getElementById('kmodal').addEventListener('click',function(e){if(e.target.id==='kmodal')kclose()});
+window.showProject=function(i){var p=DB.projects[i];if(!p)return;
+ var h='<h3>'+esc(p.title)+'</h3>'+(p.category?'<span class="kcat">'+esc(p.category)+'</span>':'');
  if(p.description)h+='<p style="color:#8a94a2;margin:6px 0 0">'+esc(p.description)+'</p>';
- if(p.photos&&p.photos.length)h+='<div class="kgal">'+p.photos.map(f=>'<img src="'+esc(f)+'" onclick="window.open(this.src)">').join('')+'</div>';
+ if(p.photos&&p.photos.length)h+='<div class="kgal">'+p.photos.map(function(f){return '<img src="'+esc(photoURL(f))+'" onclick="window.open(this.src)">'}).join('')+'</div>';
  h+=vidEmbed(p.video);
  document.getElementById('kbody').innerHTML=h;document.getElementById('kmodal').classList.add('on');};
-
-let DB={projects:[],services:[],reviews:[]};
+var DB={projects:[],services:[],reviews:[]};
 async function boot(){
- try{const r=await fetch(API+'/data.json',{cache:'no-store'});if(!r.ok)throw 0;DB=await r.json();}catch(e){return;} // сервер лёг = статика целая
- // ПРОЕКТЫ: рендер клоном первой карточки
- const wg=document.querySelector('#works .grid.work')||document.querySelector('#works .grid');
+ try{var r=await fetch(API+'/data.json',{cache:'no-store'});if(!r.ok)throw 0;DB=await r.json();}catch(e){return;}
+ var wg=document.querySelector('#works .grid.work')||document.querySelector('#works .grid');
  if(wg&&DB.projects&&DB.projects.length){
-  const tpl=wg.firstElementChild.cloneNode(true);wg.innerHTML='';
-  DB.projects.forEach((p,i)=>{const c=tpl.cloneNode(true);
-   const img=c.querySelector('img'),h3=c.querySelector('h3'),pp=c.querySelector('p');
-   if(img&&p.photos&&p.photos[0]){img.src=p.photos[0];img.alt=p.title||'';}
+  var tpl=wg.firstElementChild.cloneNode(true);wg.innerHTML='';
+  DB.projects.forEach(function(p,i){var c=tpl.cloneNode(true);
+   var img=c.querySelector('img'),h3=c.querySelector('h3'),pp=c.querySelector('p');
+   if(img&&p.photos&&p.photos[0]){img.src=photoURL(p.photos[0]);img.alt=p.title||'';}
    if(h3)h3.textContent=p.title||'';
    if(pp)pp.textContent=p.description||'';
-   if(p.photos&&p.photos.length>1){const b=document.createElement('span');b.className='kmore';b.textContent='+'+(p.photos.length-1)+' фото';c.appendChild(b);}
+   if(p.photos&&p.photos.length>1){var b=document.createElement('span');b.className='kmore';b.textContent='+'+(p.photos.length-1)+' фото';c.appendChild(b);}
    c.setAttribute('onclick','showProject('+i+')');
    wg.appendChild(c);});
  }
- // ПРАЙС: патч по индексу (вёрстку не трогаю)
- const pe=[...document.querySelectorAll('.price')];
- if(DB.services)DB.services.forEach((s,i)=>{if(!pe[i])return;const card=pe[i].parentElement;
+ var pe=[].slice.call(document.querySelectorAll('.price'));
+ if(DB.services)DB.services.forEach(function(s,i){if(!pe[i])return;var card=pe[i].parentElement;
   pe[i].textContent=s.price+(s.unit?'/'+s.unit:'');
-  const h3=card&&card.querySelector('h3'),pp=card&&card.querySelector('p');
+  var h3=card&&card.querySelector('h3'),pp=card&&card.querySelector('p');
   if(h3&&s.name)h3.textContent=s.name; if(pp&&s.note)pp.textContent=s.note;});
- // ОТЗЫВЫ: рендер только если непусто (иначе статика целая)
- const rg=document.querySelector('#reviews .grid')||document.querySelector('#reviews [class*=grid]');
+ var rg=document.querySelector('#reviews .grid')||document.querySelector('#reviews [class*=grid]');
  if(rg&&DB.reviews&&DB.reviews.length){
-  const tpl=rg.firstElementChild.cloneNode(true);rg.innerHTML='';
-  DB.reviews.forEach(rv=>{const c=tpl.cloneNode(true);
-   const t=c.querySelector('p'),b=c.querySelector('.review-author b'),sp=c.querySelector('.review-author span');
+  var rt=rg.firstElementChild.cloneNode(true);rg.innerHTML='';
+  DB.reviews.forEach(function(rv){var c=rt.cloneNode(true);
+   var t=c.querySelector('p'),b=c.querySelector('.review-author b'),sp=c.querySelector('.review-author span');
    if(t)t.textContent=rv.text||''; if(b)b.textContent=rv.author||''; if(sp)sp.textContent=rv.source||'';
    rg.appendChild(c);});
  }
@@ -767,6 +764,7 @@ async function boot(){
 boot();
 })();
 </script>
+
 
 </body>
 </html>
