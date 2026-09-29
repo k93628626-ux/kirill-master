@@ -734,7 +734,7 @@ window.showProject=function(i){var p=DB.projects[i];if(!p)return;
  document.getElementById('kbody').innerHTML=h;document.getElementById('kmodal').classList.add('on');};
 var DB={projects:[],services:[],reviews:[]};
 async function boot(){
- try{var r=await fetch(API+'/data.json',{cache:'no-store'});if(!r.ok)throw 0;DB=await r.json();}catch(e){return;}
+ try{var r=await fetch(API+'/data.json?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;DB=await r.json();}catch(e){return;}
  var wg=document.querySelector('#works .grid.work')||document.querySelector('#works .grid');
  if(wg&&DB.projects&&DB.projects.length){
   var tpl=wg.firstElementChild.cloneNode(true);wg.innerHTML='';
