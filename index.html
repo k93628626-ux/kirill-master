@@ -695,33 +695,76 @@ footer{border-top:1px solid var(--line);padding:36px 0;color:var(--muted);font-s
 </script>
 <script src="https://ai-widget-cloud.vercel.app/widget.js"></script>
 
-<!-- === ДИНАМИЧЕСКАЯ ЗАГРУЗКА ДАННЫХ === -->
+
+
+<!-- === КИРИЛЛ ADMIN RENDER (read-only) === -->
+<style>
+.kmodal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.kmodal.on{display:flex}
+.kbox{background:#141a21;border:1px solid #2a313a;border-radius:14px;max-width:900px;width:100%;max-height:90vh;overflow:auto;padding:18px}
+.kbox h3{color:#c9a24b;margin:0 0 4px}
+.kbox .kcat{display:inline-block;font-size:12px;color:#0e1116;background:#c9a24b;border-radius:6px;padding:2px 8px;margin-bottom:10px}
+.kgal{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin:12px 0}
+.kgal img{width:100%;height:140px;object-fit:cover;border-radius:8px;cursor:zoom-in}
+.kvid{position:relative;width:100%;padding-top:56.25%;margin-top:10px;border-radius:8px;overflow:hidden;background:#000}
+.kvid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.kclose{float:right;background:#2a313a;color:#ebe6dc;border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
+.kmore{position:absolute;bottom:8px;right:8px;background:#000a;color:#fff;font-size:12px;padding:2px 8px;border-radius:6px}
+#works .card{position:relative;cursor:pointer}
+</style>
+<div class="kmodal" id="kmodal"><div class="kbox"><button class="kclose" onclick="kclose()">✕ закрыть</button><div id="kbody"></div></div></div>
 <script>
-(async function() {
-  try {
-    const r = await fetch('https://admin.agent24ai.ru/data.json');
-    if (!r.ok) throw new Error('Failed to load data');
-    const data = await r.json();
-    
-    // Обновляю цены в .price элементах
-    const prices = document.querySelectorAll('.price');
-    data.services.forEach((service, i) => {
-      if (prices[i]) {
-        prices[i].textContent = service.price;
-      }
-    });
-    
-    // Обновляю фото (если есть элементы с background-image или img)
-    data.photos.forEach(photo => {
-      const img = document.querySelector(`img[src*="${photo.id}"]`);
-      if (img) {
-        img.src = `https://admin.agent24ai.ru/uploads/${photo.filename}`;
-        img.alt = photo.alt;
-      }
-    });
-  } catch (e) {
-    console.log('Dynamic data not loaded, using static fallback');
-  }
+(function(){
+const API='https://admin.agent24ai.ru';
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function vidEmbed(u){if(!u)return '';let m;
+ if(m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/))return '<div class="kvid"><iframe src="https://www.youtube.com/embed/'+m[1]+'" allowfullscreen></iframe></div>';
+ if(m=u.match(/rutube\.ru\/(?:video\/)?([\w]+)/))return '<div class="kvid"><iframe src="https://rutube.ru/play/embed/'+m[1]+'" allowfullscreen></iframe></div>';
+ if(m=u.match(/vk\.com\/video(-?\d+)_(\d+)/))return '<div class="kvid"><iframe src="https://vk.com/video_ext.php?oid='+m[1]+'&id='+m[2]+'" allowfullscreen></iframe></div>';
+ return '';}
+window.kclose=function(){document.getElementById('kmodal').classList.remove('on')};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')kclose()});
+document.getElementById('kmodal').addEventListener('click',e=>{if(e.target.id==='kmodal')kclose()});
+window.showProject=function(i){const p=DB.projects[i];if(!p)return;
+ let h='<h3>'+esc(p.title)+'</h3>'+(p.category?'<span class="kcat">'+esc(p.category)+'</span>':'');
+ if(p.description)h+='<p style="color:#8a94a2;margin:6px 0 0">'+esc(p.description)+'</p>';
+ if(p.photos&&p.photos.length)h+='<div class="kgal">'+p.photos.map(f=>'<img src="'+esc(f)+'" onclick="window.open(this.src)">').join('')+'</div>';
+ h+=vidEmbed(p.video);
+ document.getElementById('kbody').innerHTML=h;document.getElementById('kmodal').classList.add('on');};
+
+let DB={projects:[],services:[],reviews:[]};
+async function boot(){
+ try{const r=await fetch(API+'/data.json',{cache:'no-store'});if(!r.ok)throw 0;DB=await r.json();}catch(e){return;} // сервер лёг = статика целая
+ // ПРОЕКТЫ: рендер клоном первой карточки
+ const wg=document.querySelector('#works .grid.work')||document.querySelector('#works .grid');
+ if(wg&&DB.projects&&DB.projects.length){
+  const tpl=wg.firstElementChild.cloneNode(true);wg.innerHTML='';
+  DB.projects.forEach((p,i)=>{const c=tpl.cloneNode(true);
+   const img=c.querySelector('img'),h3=c.querySelector('h3'),pp=c.querySelector('p');
+   if(img&&p.photos&&p.photos[0]){img.src=p.photos[0];img.alt=p.title||'';}
+   if(h3)h3.textContent=p.title||'';
+   if(pp)pp.textContent=p.description||'';
+   if(p.photos&&p.photos.length>1){const b=document.createElement('span');b.className='kmore';b.textContent='+'+(p.photos.length-1)+' фото';c.appendChild(b);}
+   c.setAttribute('onclick','showProject('+i+')');
+   wg.appendChild(c);});
+ }
+ // ПРАЙС: патч по индексу (вёрстку не трогаю)
+ const pe=[...document.querySelectorAll('.price')];
+ if(DB.services)DB.services.forEach((s,i)=>{if(!pe[i])return;const card=pe[i].parentElement;
+  pe[i].textContent=s.price+(s.unit?'/'+s.unit:'');
+  const h3=card&&card.querySelector('h3'),pp=card&&card.querySelector('p');
+  if(h3&&s.name)h3.textContent=s.name; if(pp&&s.note)pp.textContent=s.note;});
+ // ОТЗЫВЫ: рендер только если непусто (иначе статика целая)
+ const rg=document.querySelector('#reviews .grid')||document.querySelector('#reviews [class*=grid]');
+ if(rg&&DB.reviews&&DB.reviews.length){
+  const tpl=rg.firstElementChild.cloneNode(true);rg.innerHTML='';
+  DB.reviews.forEach(rv=>{const c=tpl.cloneNode(true);
+   const t=c.querySelector('p'),b=c.querySelector('.review-author b'),sp=c.querySelector('.review-author span');
+   if(t)t.textContent=rv.text||''; if(b)b.textContent=rv.author||''; if(sp)sp.textContent=rv.source||'';
+   rg.appendChild(c);});
+ }
+}
+boot();
 })();
 </script>
 
