@@ -738,7 +738,7 @@ async function boot(){
  var wg=document.querySelector('#works .grid.work')||document.querySelector('#works .grid');
  if(wg&&DB.projects&&DB.projects.length){
   var tpl=wg.firstElementChild.cloneNode(true);wg.innerHTML='';
-  DB.projects.forEach(function(p,i){var c=tpl.cloneNode(true);
+  DB.projects.forEach(function(p,i){var c=tpl.cloneNode(true);c.classList.remove('reveal','reveal-d1','reveal-d2','reveal-d3','reveal-d4');c.style.opacity='1';c.style.transform='none';c.style.transition='none';
    var img=c.querySelector('img'),h3=c.querySelector('h3'),pp=c.querySelector('p');
    if(img&&p.photos&&p.photos[0]){img.src=photoURL(p.photos[0]);img.alt=p.title||'';}
    if(h3)h3.textContent=p.title||'';
@@ -755,7 +755,7 @@ async function boot(){
  var rg=document.querySelector('#reviews .grid')||document.querySelector('#reviews [class*=grid]');
  if(rg&&DB.reviews&&DB.reviews.length){
   var rt=rg.firstElementChild.cloneNode(true);rg.innerHTML='';
-  DB.reviews.forEach(function(rv){var c=rt.cloneNode(true);
+  DB.reviews.forEach(function(rv){var c=rt.cloneNode(true);c.classList.remove('reveal','reveal-d1','reveal-d2','reveal-d3','reveal-d4');c.style.opacity='1';c.style.transform='none';c.style.transition='none';
    var t=c.querySelector('p'),b=c.querySelector('.review-author b'),sp=c.querySelector('.review-author span');
    if(t)t.textContent=rv.text||''; if(b)b.textContent=rv.author||''; if(sp)sp.textContent=rv.source||'';
    rg.appendChild(c);});
